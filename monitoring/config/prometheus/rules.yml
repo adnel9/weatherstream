@@ -1,0 +1,33 @@
+groups:                          # Defines groups of alerting rules.
+  - name: CPU_Usage_Alerts       # Name of the alert group for organizing related alerts.
+    rules:                       # List of alerting rules within this group.
+      - alert: High CPU Usage      # Name of the alert. This identifier is used in notifications and logs.
+        expr: 100 * (1 - avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 80
+                                  # Expression to evaluate CPU usage:
+                                  # - `node_cpu_seconds_total{mode="idle"}`: Total time the CPU was idle.
+                                  # - `rate(...[5m])`: Calculates the rate of change over the last 5 minutes.
+                                  # - `1 - avg by(instance) (...)`: Calculates the average active CPU usage by instance.
+                                  # - `100 * (...) > 80`: Triggers the alert if CPU usage exceeds 80%.
+        for: 5m                   # Alert fires only if the condition persists for 5 minutes.
+        labels:                  # Labels to categorize and prioritize the alert.
+          severity: critical     # Severity level of the alert, indicating a critical issue.
+        annotations:             # Additional metadata to include in the alert notification.
+          summary: "High CPU usage detected on {{ $labels.instance }}"
+                                  # A brief summary of the issue, with dynamic substitution of the instance label.
+          description: "CPU usage on instance {{ $labels.instance }} has been above 80% for the last 5 minutes."
+                                  # A detailed description of the alert, including context and duration.
+
+  - name: Request_Rate_Alerts      # Name of the alert group for organizing related alerts.
+    rules:                       # List of alerting rules within this group.
+      - alert: High Request Rate   # Name of the alert. This identifier is used in notifications and logs.
+        expr: increase(http_requests_total[10s]) > 500
+                                  # Expression to evaluate request rate:
+                                  # - `rate(http_requests_total[10s])`: Calculates the rate of HTTP requests over the last 10 seconds.
+        for: 10s                  # Alert fires only if the condition persists for 10 seconds.
+        labels:                  # Labels to categorize and prioritize the alert.
+          severity: critical     # Severity level of the alert, indicating a warning issue.
+        annotations:             # Additional metadata to include in the alert notification.
+          summary: "High request rate detected"
+                                  # A brief summary of the issue.
+          description: "The total number of requests has exceeded 500 requests last 10 seconds."
+                                  # A detailed description of the alert, including context and duration.

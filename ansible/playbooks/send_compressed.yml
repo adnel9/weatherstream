@@ -1,0 +1,451 @@
+- hosts: backend
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - block:
+      - name: Copy application directory to remote instance
+        copy:
+          src: ~/compressed/backend.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+
+      - name: Copy application directory of monitoring to remote instance
+        copy:
+          src: ~/compressed/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+    
+      - name: Ensure the application directory exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/backend/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Ensure the application directory of monitoring exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/monitoring/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Extract application directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/backend.tar.gz
+          dest: /home/{{ ansible_user }}/backend/
+          remote_src: yes
+
+      - name: Extract application directory of monitoring on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}/monitoring/
+          remote_src: yes
+      
+      rescue:
+        - name: Revert changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/backend/
+            state: absent
+        - name: Revert changes of monitoring if the block fails
+          file:
+            path: /home/{{ ansible_user }}/monitoring/
+            state: absent
+    - name: Remove monitoring.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/monitoring.tar.gz
+        state: absent
+    - name: Remove backend.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/backend.tar.gz
+        state: absent
+    
+- hosts: frontend
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - block:
+
+      - name: Copy application directory to remote instance
+        copy:
+          src: ~/compressed/frontend.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+
+      - name: Copy application directory of monitoring to remote instance
+        copy:
+          src: ~/compressed/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+    
+      - name: Ensure the application directory exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/frontend/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Ensure the application directory of monitoring exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/monitoring/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Extract application directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/frontend.tar.gz
+          dest: /home/{{ ansible_user }}/frontend/
+          remote_src: yes
+      
+      - name: Extract application directory of monitoring on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}/monitoring/
+          remote_src: yes
+      
+      rescue:
+        - name: Revert changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/frontend/
+            state: absent
+        - name: Revert changes of monitoring if the block fails
+          file:
+            path: /home/{{ ansible_user }}/monitoring/
+            state: absent
+    - name: Remove monitoring.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/monitoring.tar.gz
+        state: absent
+    - name: Remove frontend.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/frontend.tar.gz
+        state: absent
+- hosts: kafka_zookeeper
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - block:
+
+      - name: Copy application directory to remote instance
+        copy:
+          src: ~/compressed/kafka_zookeeper.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+
+      - name: Copy application directory of monitoring to remote instance
+        copy:
+          src: ~/compressed/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+    
+      - name: Ensure the application directory exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/kafka_zookeeper/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Ensure the application directory of monitoring exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/monitoring/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Extract application directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/kafka_zookeeper.tar.gz
+          dest: /home/{{ ansible_user }}/kafka_zookeeper/
+          remote_src: yes
+      
+      - name: Extract application directory of monitoring on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}/monitoring/
+          remote_src: yes
+      
+      rescue:
+        - name: Revert changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/kafka_zookeeper/
+            state: absent
+        - name: Revert changes of monitoring if the block fails
+          file:
+            path: /home/{{ ansible_user }}/monitoring/
+            state: absent
+    - name: Remove monitoring.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/monitoring.tar.gz
+        state: absent
+    - name: Remove kafka_zookeeper.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/kafka_zookeeper.tar.gz
+        state: absent
+        
+- hosts: mongodb
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - block:
+
+      - name: Copy application directory of mongodb to remote instance
+        copy:
+          src: ~/compressed/mongodb.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+
+      - name: Copy application directory of monitoring to remote instance
+        copy:
+          src: ~/compressed/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+    
+      - name: Ensure the application directory of mongodb exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/mongodb/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+
+      - name: Ensure the application directory of monitoring exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/monitoring/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Extract application directory of mongodb on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/mongodb.tar.gz
+          dest: /home/{{ ansible_user }}/mongodb/
+          remote_src: yes
+      
+      - name: Extract application directory of monitoring on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}/monitoring/
+          remote_src: yes
+      
+      rescue:
+        - name: Revert changes of mongodb if the block fails
+          file:
+            path: /home/{{ ansible_user }}/mongodb/
+            state: absent
+        - name: Revert changes of monitoring if the block fails
+          file:
+            path: /home/{{ ansible_user }}/monitoring/
+            state: absent
+    - name: Remove monitoring.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/monitoring.tar.gz
+        state: absent
+    - name: Remove mongodb.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/mongodb.tar.gz
+        state: absent
+- hosts: weather_fetch
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - block:
+
+      - name: Copy application directory to remote instance
+        copy:
+          src: ~/compressed/weather_fetch.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+    
+      - name: Ensure the application directory exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/weather_fetch/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Extract application directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/weather_fetch.tar.gz
+          dest: /home/{{ ansible_user }}/weather_fetch/
+          remote_src: yes
+      
+      rescue:
+        - name: Revert changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/weather_fetch/
+            state: absent
+    - name: Remove monitoring.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/monitoring.tar.gz
+        state: absent
+    - name: Remove weather_fetch.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/weather_fetch.tar.gz
+        state: absent
+- hosts: monitoring
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - block:
+
+      - name: Copy application directory to remote instance
+        copy:
+          src: ~/compressed/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+    
+      - name: Ensure the application directory exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/monitoring/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Extract application directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}/monitoring/
+          remote_src: yes
+      
+      rescue:
+        - name: Revert changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/monitoring/
+            state: absent
+
+    - name: Remove monitoring.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/monitoring.tar.gz
+        state: absent
+- hosts: collect_alert
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - block:
+
+      - name: Copy collect-server directory to remote instance
+        copy:
+          src: ~/compressed/collect-server.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Copy alert-server directory to remote instance
+        copy:
+          src: ~/compressed/alert-server.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+
+      - name: Copy monitoring directory to remote instance
+        copy:
+          src: ~/compressed/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+    
+      - name: Ensure the collect-server directory exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/collect-server/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Ensure the alert-server directory exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/alert-server/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+
+      - name: Ensure the application directory of monitoring exists on remote instance
+        file:
+          path: /home/{{ ansible_user }}/monitoring/
+          state: directory
+          owner: "{{ ansible_user }}"
+          group: "{{ ansible_user }}"
+          mode: '0755'
+      
+      - name: Extract collect-server directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/collect-server.tar.gz
+          dest: /home/{{ ansible_user }}/collect-server/
+          remote_src: yes
+      
+      - name: Extract alert-server directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/alert-server.tar.gz
+          dest: /home/{{ ansible_user }}/alert-server/
+          remote_src: yes
+      
+      - name: Extract monitoring directory on remote instance
+        unarchive:
+          src: /home/{{ ansible_user }}/monitoring.tar.gz
+          dest: /home/{{ ansible_user }}/monitoring/
+          remote_src: yes 
+      rescue:
+        - name: Revert monitoring changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/monitoring/
+            state: absent
+        - name: Revert collect-server changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/collect-server/
+            state: absent
+        - name: Revert alert-server changes if the block fails
+          file:
+            path: /home/{{ ansible_user }}/alert-server/
+            state: absent
+    - name: Remove monitoring.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/monitoring.tar.gz
+        state: absent
+    - name: Remove collect-server.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/collect-server.tar.gz
+        state: absent
+    - name: Remove alert-server.tar.gz file if it exists
+      file:
+        path: /home/{{ ansible_user }}/alert-server.tar.gz
+        state: absent

@@ -1,0 +1,16 @@
+doctype html
+html
+    head
+        title Weather Search
+    body
+        h1 Enter a City Name
+        form#weatherForm(method="POST", action="/weather")
+            input(type="text", name="city", placeholder="Enter a city name", required=true)
+            button(type="submit") Search
+        if weatherData
+            h2 Weather in #{weatherData.city}
+            p Temperature: #{weatherData.temperature}
+            p Description: #{weatherData.description}
+            p Humidity: #{weatherData.humidity}
+        else
+            p Enter a city name to see the weather.

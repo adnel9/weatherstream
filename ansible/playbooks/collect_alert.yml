@@ -1,0 +1,27 @@
+- hosts: collect_alert
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - name: Build Docker image for collect-server
+      command: docker build -t meteo-collect-server:latest .
+      args:
+        chdir: /home/{{ ansible_user }}/collect-server
+
+    - name: Run collect-server Docker container
+      command: docker run -d --name meteo-collect-server --env-file /home/{{ ansible_user }}/collect-server/.env meteo-collect-server:latest
+      args:
+        chdir: /home/{{ ansible_user }}/collect-server
+
+    - name: Build Docker image for alert-server
+      command: docker build -t meteo-alert-server:latest .
+      args:
+        chdir: /home/{{ ansible_user }}/alert-server
+
+    - name: Run alert-server Docker container
+      command: docker run -d --name meteo-alert-server --env-file /home/{{ ansible_user }}/alert-server/.env meteo-alert-server:latest
+      args:
+        chdir: /home/{{ ansible_user }}/alert-server
+    
+
+

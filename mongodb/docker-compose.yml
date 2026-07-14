@@ -1,0 +1,52 @@
+services:
+  # Monitoring Section: Contains all services and configurations related to system and application monitoring
+  mongo_exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mongo_exporter
+    ports:
+        - "9216:9216"
+    restart: unless-stopped
+    environment:
+        MONGODB_URI: ${MONGO_URI}
+    command: ["--collect-all", "--compatible-mode", "--discovering-mode"]
+
+  cadvisor:
+    # cadvisor exporter
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+        - "8080:8080"
+    volumes:
+        - /:/rootfs:ro  # Root filesystem for host metrics
+        - /var/run:/var/run:ro  # Access to Docker runtime data
+        - /sys:/sys:ro  # System information
+        - /var/lib/docker/:/var/lib/docker:ro  # Docker metadata
+        - /dev/disk/:/dev/disk:ro  # Disk information
+    devices:
+        - /dev/kmsg  # Access to kernel messages
+    restart: unless-stopped
+  
+  node_exporter:
+    # node exporter
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    ports:
+        - "9100:9100"
+    restart: unless-stopped
+    volumes:
+        - '/:/host:ro,rslave'
+    command:
+        - '--path.rootfs=/host'
+
+  mongodb:
+    container_name: meteo-mongodb
+    build:
+      context: ./
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE_USER: ${MONGO_INITDB_DATABASE_USER}
+      MONGO_INITDB_DATABASE_PASSWORD: ${MONGO_INITDB_DATABASE_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}

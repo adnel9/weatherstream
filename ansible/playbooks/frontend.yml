@@ -1,0 +1,9 @@
+- hosts: frontend
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - name: Run Docker Compose to build and start containers
+      command: docker-compose up --build -d
+      args:
+        chdir: /home/{{ ansible_user }}/frontend

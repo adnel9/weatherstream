@@ -1,0 +1,55 @@
+global:
+  scrape_interval: 15s # By default, scrape targets every 15 seconds
+
+  # Attach theses labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  # external_labels:
+  # monitor: `codelab-monitor`
+
+# Alertmanager Configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093"
+
+# Load rules
+rule_files:
+  - "rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself
+scrape_configs:
+  # The job name is added as a label `job-<job-name>` to any timeseries scraped from this config.
+  - job_name: "prometheus"
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  # Example job for node_exporter
+  - job_name: "node_exporter"
+    static_configs:
+      - targets: ["node_exporter:9100"]
+
+  # Example job for cadvisor
+  - job_name: "cadvisor"
+    static_configs:
+      # cadvisor (domain name) is used since cadvisor runs in the same pod as prometheus
+      # Otherwise use Ip adress
+      - targets: ["cadvisor:8080"]
+
+  # Example job for Express
+  - job_name: "express"
+    static_configs:
+      - targets: ["backend-container:3000"]
+
+  # Example job for MongoDB
+  - job_name: mongodb
+    static_configs:
+      - targets: ["mongo_exporter:9216"]
+
+    # Example job for Kafka
+  - job_name: kafka
+    static_configs:
+      - targets: ["kafka-container:7070"]

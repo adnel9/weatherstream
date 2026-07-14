@@ -1,0 +1,17 @@
+- hosts: weather_fetch
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  tasks:
+    - name: Build Docker image for weather_fetch
+      command: docker build -t meteo-weather-fetch:latest .
+      args:
+        chdir: /home/{{ ansible_user }}/weather_fetch
+
+    - name: Run weather-fetch Docker container
+      command: docker run -d --name meteo-weather-fetch -p 3001:3001 meteo-weather-fetch:latest
+      args:
+        chdir: /home/{{ ansible_user }}/weather_fetch
+
+    - name: Enable container restart policy
+      command: docker update --restart unless-stopped meteo-weather-fetch

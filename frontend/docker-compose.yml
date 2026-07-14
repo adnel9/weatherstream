@@ -1,0 +1,40 @@
+services:
+
+  # Monitoring Section: Contains all services and configurations related to system and application monitoring
+
+  cadvisor:
+    # cadvisor exporter
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+        - "8080:8080"
+    volumes:
+        - /:/rootfs:ro  # Root filesystem for host metrics
+        - /var/run:/var/run:ro  # Access to Docker runtime data
+        - /sys:/sys:ro  # System information
+        - /var/lib/docker/:/var/lib/docker:ro  # Docker metadata
+        - /dev/disk/:/dev/disk:ro  # Disk information
+    devices:
+        - /dev/kmsg  # Access to kernel messages
+    restart: unless-stopped
+  
+  node_exporter:
+    # node exporter
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    ports:
+        - "9100:9100"
+    restart: unless-stopped
+    volumes:
+        - '/:/host:ro,rslave'
+    command:
+        - '--path.rootfs=/host'
+
+  frontend:
+    container_name: meteo-frontend
+    build:
+        context: ./
+    ports:
+        - "80:5173"
+    environment:
+      VITE_BACKEND_URL: ${VITE_BACKEND_URL}

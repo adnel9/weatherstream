@@ -1,0 +1,74 @@
+services:
+  zookeeper:
+    container_name: zookeeper-container
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 50
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-network
+
+  kafka:
+    container_name: kafka-container
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9092:9092"
+      - "7070:7070"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://$INSTANCE_IP:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # JMX Exporter configuration for monitoring
+      EXTRA_ARGS: -javaagent:/opt/jmx_exporter/jmx_prometheus_javaagent-0.18.0.jar=7070:/opt/jmx_exporter/config.yml
+      # JMX port configuration
+      JMX_PORT: 2101
+      # JMX remote options
+      KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost -Dcom.sun.management.jmxremote.rmi.port=2101"
+    # Volume mapping for JMX Exporter
+    volumes:
+      - ../monitoring/exporters/jmx_exporter/:/opt/jmx_exporter
+    depends_on:
+      - zookeeper
+    networks:
+      - kafka-network
+
+  # Monitoring Section: Contains all services and configurations related to system and application monitoring
+
+  cadvisor:
+      # cadvisor exporter
+      image: gcr.io/cadvisor/cadvisor:latest
+      container_name: cadvisor
+      ports:
+        - "8080:8080"
+      volumes:
+          - /:/rootfs:ro  # Root filesystem for host metrics
+          - /var/run:/var/run:ro  # Access to Docker runtime data
+          - /sys:/sys:ro  # System information
+          - /var/lib/docker/:/var/lib/docker:ro  # Docker metadata
+          - /dev/disk/:/dev/disk:ro  # Disk information
+      devices:
+          - /dev/kmsg  # Access to kernel messages
+      restart: unless-stopped
+    
+  node_exporter:
+    # node exporter
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    ports:
+        - "9100:9100"
+    restart: unless-stopped
+    volumes:
+        - '/:/host:ro,rslave'
+    command:
+        - '--path.rootfs=/host'
+
+networks:
+    kafka-network:
+      driver: bridge

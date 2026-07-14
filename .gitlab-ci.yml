@@ -1,0 +1,178 @@
+stages:
+  - cleanupAuto
+  - deploy
+  - cleanupManuel
+
+cleanupAuto:
+  stage: cleanupAuto
+  image: nasmanea/my-gcloud-terraform-ansible:latest
+  allow_failure: true
+  before_script:
+    # Ensure we have the GCP credentials available again
+    - echo "$GCP_CREDENTIALS" > /tmp/account.json
+    - export GOOGLE_APPLICATION_CREDENTIALS="/tmp/account.json"
+    - gcloud auth activate-service-account --key-file=/tmp/account.json
+    - gcloud config set project meteo-app-ensimag
+  script:
+    - cd $CI_PROJECT_DIR
+    - chmod +x clean-machines.sh
+    - ./clean-machines.sh
+
+deploy:
+  stage: deploy
+  image: nasmanea/my-gcloud-terraform-ansible:latest
+  allow_failure: true
+  tags: 
+    - docker
+  before_script:
+    # prepare ssh keys
+    - echo "$GCP_PRV_SSH_KEY" > ~/.ssh/meteo_gcp_key
+    - chmod 600 ~/.ssh/meteo_gcp_key
+    # prepare gcp ceredentials
+    - echo "$GCP_CREDENTIALS" > /tmp/account.json
+    - export GOOGLE_APPLICATION_CREDENTIALS="/tmp/account.json"
+    - gcloud auth activate-service-account --key-file=/tmp/account.json
+    - gcloud config set project meteo-app-ensimag
+  script:
+    - cd $CI_PROJECT_DIR/terraform
+    - terraform init
+    - terraform apply -var="gcp_pub_ssh_key=$GCP_PUB_SSH_KEY" -auto-approve
+
+    # Export public and private IPs from Terraform outputs
+    - export FRONTEND_PUBLIC_IP=$(terraform output -raw frontend_public_ip)
+    - export FRONTEND_PRIVATE_IP=$(terraform output -raw frontend_private_ip)
+    - export BACKEND_PUBLIC_IP=$(terraform output -raw backend_public_ip)
+    - export BACKEND_PRIVATE_IP=$(terraform output -raw backend_private_ip)
+    - export MONGODB_PUBLIC_IP=$(terraform output -raw mongodb_public_ip)
+    - export MONGODB_PRIVATE_IP=$(terraform output -raw mongodb_private_ip)
+    - export KAFKA_PUBLIC_IP=$(terraform output -raw kafka_public_ip)
+    - export KAFKA_PRIVATE_IP=$(terraform output -raw kafka_private_ip)
+    - export WEATHER_FETCH_PUBLIC_IP=$(terraform output -raw weather_fetch_public_ip)
+    - export WEATHER_FETCH_PRIVATE_IP=$(terraform output -raw weather_fetch_private_ip)
+    - export MONITORING_PUBLIC_IP=$(terraform output -raw monitoring_public_ip)
+    - export MONITORING_PRIVATE_IP=$(terraform output -raw monitoring_private_ip)
+    - export COLLECT_ALERT_PUBLIC_IP=$(terraform output -raw collect_alert_public_ip)
+    - export COLLECT_ALERT_PRIVATE_IP=$(terraform output -raw collect_alert_private_ip)
+
+    - until nc -z $FRONTEND_PUBLIC_IP 22 2>/dev/null; do
+        echo "Waiting for SSH to become available...";
+        sleep 5;
+      done
+    - until nc -z $BACKEND_PUBLIC_IP 22 2>/dev/null; do
+        echo "Waiting for SSH to become available...";
+        sleep 5;
+      done
+    - until nc -z $MONGODB_PUBLIC_IP 22 2>/dev/null; do
+        echo "Waiting for SSH to become available...";
+        sleep 5;
+      done
+    - until nc -z $KAFKA_PUBLIC_IP 22 2>/dev/null; do
+        echo "Waiting for SSH to become available...";
+        sleep 5;
+      done
+    - until nc -z $WEATHER_FETCH_PUBLIC_IP 22 2>/dev/null; do
+        echo "Waiting for SSH to become available...";
+        sleep 5;
+      done
+    - until nc -z $MONITORING_PUBLIC_IP 22 2>/dev/null; do
+        echo "Waiting for SSH to become available...";
+        sleep 5;
+      done
+    - until nc -z $COLLECT_ALERT_PUBLIC_IP 22 2>/dev/null; do
+        echo "Waiting for SSH to become available...";
+        sleep 5;
+      done
+    # update some env variables
+    - cd $CI_PROJECT_DIR
+    # setting .env for kafka
+    - echo "INSTANCE_IP=$KAFKA_PRIVATE_IP" > kafka_zookeeper/.env
+    # setting .env for weather-fetch
+    - echo "OPENWEATHER_API_KEY=$OPENWEATHER_API_KEY" > weather-fetch-server/meteo-weather-fetch/.env
+    - echo "KAFKA_IP=$KAFKA_PRIVATE_IP" >> weather-fetch-server/meteo-weather-fetch/.env
+    # setting .env for backend
+    - echo "KAFKA_IP=$KAFKA_PRIVATE_IP" >> backend/.env
+    - echo "JWT_SECRET=$JWT_SECRET" >> backend/.env
+    - echo "FRONTEND_URL=http://$FRONTEND_PRIVATE_IP" >> backend/.env
+    - echo "MONGO_INITDB_DATABASE_USER=$MONGO_INITDB_DATABASE_USER" >> backend/.env
+    - echo "MONGO_INITDB_DATABASE_PASSWORD=$MONGO_INITDB_DATABASE_PASSWORD" >> backend/.env
+    - echo "MONGO_INITDB_DATABASE=$MONGO_INITDB_DATABASE" >> backend/.env
+    - echo "MONGODB_PRIVATE_IP=$MONGODB_PRIVATE_IP" >> backend/.env
+    # setting .env for frontend
+    - echo "VITE_BACKEND_URL=http://$BACKEND_PRIVATE_IP:3000" > frontend/.env
+    - echo "VITE_FRONTEND_URL=http://$FRONTEND_PUBLIC_IP" >> frontend/.env
+    # setting .env for mongodb
+    - echo "MONGO_INITDB_ROOT_USERNAME=$MONGO_INITDB_ROOT_USERNAME" > mongodb/.env
+    - echo "MONGO_INITDB_ROOT_PASSWORD=$MONGO_INITDB_ROOT_PASSWORD" >> mongodb/.env
+    - echo "MONGO_INITDB_DATABASE_USER=$MONGO_INITDB_DATABASE_USER" >> mongodb/.env
+    - echo "MONGO_INITDB_DATABASE_PASSWORD=$MONGO_INITDB_DATABASE_PASSWORD" >> mongodb/.env
+    - echo "MONGO_INITDB_DATABASE=$MONGO_INITDB_DATABASE" >> mongodb/.env
+    - echo "MONGO_INITDB_DATABASE=$MONGO_INITDB_DATABASE" >> mongodb/.env
+    - echo "MONGO_URI=mongodb://$MONGO_INITDB_DATABASE_USER:$MONGO_INITDB_DATABASE_PASSWORD@$MONGODB_PRIVATE_IP:27017/$MONGO_INITDB_DATABASE" >> mongodb/.env
+    # setting .env for collect-server
+    - echo "MONGO_INITDB_DATABASE_USER=$MONGO_INITDB_DATABASE_USER" > collect-server/.env
+    - echo "MONGO_INITDB_DATABASE_PASSWORD=$MONGO_INITDB_DATABASE_PASSWORD" >> collect-server/.env
+    - echo "MONGO_INITDB_DATABASE=$MONGO_INITDB_DATABASE" >> collect-server/.env
+    - echo "MONGODB_PRIVATE_IP=$MONGODB_PRIVATE_IP" >> collect-server/.env
+    - echo "KAFKA_IP=$KAFKA_PRIVATE_IP" >> collect-server/.env
+    # setting .env for alert-server
+    - echo "MONGO_INITDB_DATABASE_USER=$MONGO_INITDB_DATABASE_USER" > alert-server/.env
+    - echo "MONGO_INITDB_DATABASE_PASSWORD=$MONGO_INITDB_DATABASE_PASSWORD" >> alert-server/.env
+    - echo "MONGO_INITDB_DATABASE=$MONGO_INITDB_DATABASE" >> alert-server/.env
+    - echo "MONGODB_PRIVATE_IP=$MONGODB_PRIVATE_IP" >> alert-server/.env
+    - echo "KAFKA_IP=$KAFKA_PRIVATE_IP" >> alert-server/.env
+    # set monitoring IPs
+    - cd $CI_PROJECT_DIR/monitoring/config/prometheus
+    - sed -i "s/FRONTEND_IP/$FRONTEND_PRIVATE_IP/g" prometheus.yml
+    - sed -i "s/BACKEND_IP/$BACKEND_PRIVATE_IP/g" prometheus.yml
+    - sed -i "s/MONGODB_IP/$MONGODB_PRIVATE_IP/g" prometheus.yml
+    - sed -i "s/KAFKA_ZOOKEEPER_IP/$KAFKA_PRIVATE_IP/g" prometheus.yml
+
+    # compress project
+    - mkdir -p ~/compressed
+    - tar -czf ~/compressed/monitoring.tar.gz -C $CI_PROJECT_DIR/monitoring .
+    - tar -czf ~/compressed/frontend.tar.gz -C $CI_PROJECT_DIR/frontend .
+    - tar -czf ~/compressed/backend.tar.gz -C $CI_PROJECT_DIR/backend .
+    - tar -czf ~/compressed/mongodb.tar.gz -C $CI_PROJECT_DIR/mongodb .
+    - tar -czf ~/compressed/weather_fetch.tar.gz -C $CI_PROJECT_DIR/weather-fetch-server .
+    - tar -czf ~/compressed/kafka_zookeeper.tar.gz -C $CI_PROJECT_DIR/kafka_zookeeper .
+    - tar -czf ~/compressed/collect-server.tar.gz -C $CI_PROJECT_DIR/collect-server .
+    - tar -czf ~/compressed/alert-server.tar.gz -C $CI_PROJECT_DIR/alert-server .
+    # start ansible config on machines
+    - cd $CI_PROJECT_DIR/ansible
+    - sed -i "s/FRONTEND_IP/$FRONTEND_PUBLIC_IP/g" inventory.ini
+    - sed -i "s/BACKEND_IP/$BACKEND_PUBLIC_IP/g" inventory.ini
+    - sed -i "s/MONGODB_IP/$MONGODB_PUBLIC_IP/g" inventory.ini
+    - sed -i "s/KAFKA_ZOOKEEPER_IP/$KAFKA_PUBLIC_IP/g" inventory.ini
+    - sed -i "s/WEATHER_FETCH_IP/$WEATHER_FETCH_PUBLIC_IP/g" inventory.ini
+    - sed -i "s/MONITORING_IP/$MONITORING_PUBLIC_IP/g" inventory.ini
+    - sed -i "s/COLLECT_ALERT_IP/$COLLECT_ALERT_PUBLIC_IP/g" inventory.ini
+
+    # Run playbooks (order must be respected)
+    - ansible-playbook -i inventory.ini playbooks/docker_install.yml &
+    - ansible-playbook -i inventory.ini playbooks/send_compressed.yml --forks 7 &
+    - wait
+    - ansible-playbook -i inventory.ini playbooks/mongodb.yml &
+    - ansible-playbook -i inventory.ini playbooks/kafka_zookeeper.yml
+    - sleep 20
+    - ansible-playbook -i inventory.ini playbooks/weather_fetch.yml &
+    - ansible-playbook -i inventory.ini playbooks/backend.yml &
+    - ansible-playbook -i inventory.ini playbooks/collect_alert.yml &
+    - wait
+    - ansible-playbook -i inventory.ini playbooks/frontend.yml
+    - ansible-playbook -i inventory.ini playbooks/monitoring.yml
+
+cleanupManuel:
+  stage: cleanupManuel
+  image: nasmanea/my-gcloud-terraform-ansible:latest
+  when: manual  # Only trigger this job manually
+  allow_failure: true
+  before_script:
+    # Ensure we have the GCP credentials available again
+    - echo "$GCP_CREDENTIALS" > /tmp/account.json
+    - export GOOGLE_APPLICATION_CREDENTIALS="/tmp/account.json"
+    - gcloud auth activate-service-account --key-file=/tmp/account.json
+    - gcloud config set project meteo-app-ensimag
+  script:
+    - cd $CI_PROJECT_DIR
+    - chmod +x clean-machines.sh
+    - ./clean-machines.sh

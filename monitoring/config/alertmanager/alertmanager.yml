@@ -1,0 +1,20 @@
+global:
+  resolve_timeout: 5m # Time after which an alert is considered resolved if no updates are received.
+
+route:
+  group_by: ['alertname'] # Group alerts by the 'alertname' label.
+  group_wait: 10s         # Wait time before sending the first alert notification in a group.
+  group_interval: 10s     # Minimum time interval to wait before sending additional notifications for the same group.
+  repeat_interval: 1h     # Time after which a notification for the same group of alerts is re-sent.
+  receiver: 'Mail-Alert'  # Default receiver for alerts.
+
+receivers:
+  - name: 'Mail-Alert'     # Name of the receiver configuration.
+    email_configs:         # Email configuration for sending notifications.
+      - smarthost: 'smtp.gmail.com:587'        # SMTP server and port.
+        auth_username: 'alert.manager.1337@gmail.com' # Username for SMTP authentication.
+        auth_password: 'xnqe iquy elfy vxdy '         # Password for SMTP authentication (replace with secure method).
+        from: 'alert.manager.587@gmail.com'          # Email address used as the sender.
+        to: 'yrjeb442@gmail.com'                     # Recipient email address.
+        headers:
+          subject: 'ALERT: High CPU Usage'

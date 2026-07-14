@@ -1,0 +1,11 @@
+apiVersion: 1  # Specifies the version of the provisioning API.
+
+providers:
+- name: 'Prometheus'  # Name of the provider.
+  orgId: 1  # Organization ID in Grafana (default is 1).
+  folder: ''  # Folder where dashboards will be placed (empty means "General" folder).
+  type: file  # Type of provisioning, here it loads dashboards from files.
+  disableDeletion: false  # Allows deletion of dashboards if they are removed from the filesystem.
+  editable: true  # Dashboards are editable from the Grafana UI.
+  options:
+    path: /etc/grafana/provisioning/dashboards  # Directory where dashboard JSON files are stored.

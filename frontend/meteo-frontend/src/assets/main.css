@@ -1,0 +1,111 @@
+@import './base.css';
+
+#app {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Animated atmospheric background */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% -10%, rgba(56, 130, 246, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(14, 100, 210, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 80% at 50% 50%, rgba(10, 30, 80, 0.6) 0%, transparent 80%),
+    linear-gradient(160deg, #020c1e 0%, #061428 40%, #0a1a38 70%, #040c1e 100%);
+  animation: bgBreathe 12s ease-in-out infinite alternate;
+}
+
+@keyframes bgBreathe {
+  0%   { filter: brightness(1); }
+  50%  { filter: brightness(1.08) hue-rotate(8deg); }
+  100% { filter: brightness(0.95) hue-rotate(-4deg); }
+}
+
+/* Stars */
+.app-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 25%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 55% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 10%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 10% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 70%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 65% 55%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 75%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 90%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 95% 85%, rgba(255,255,255,0.3) 0%, transparent 100%);
+  animation: starTwinkle 6s ease-in-out infinite alternate;
+}
+
+@keyframes starTwinkle {
+  0%   { opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* Accent glow orb */
+.app-bg::after {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.06) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  animation: orbFloat 8s ease-in-out infinite alternate;
+}
+
+@keyframes orbFloat {
+  0%   { transform: translate(-50%, -60%) scale(1); opacity: 0.8; }
+  100% { transform: translate(-50%, -65%) scale(1.15); opacity: 1; }
+}
+
+/* Global animation keyframes */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(0.97); }
+}

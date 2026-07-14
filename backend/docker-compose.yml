@@ -1,0 +1,73 @@
+services:
+
+  # Monitoring Section: Contains all services and configurations related to system and application monitoring
+
+  cadvisor:
+    # cadvisor exporter
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+        - "8080:8080"
+    volumes:
+        - /:/rootfs:ro  # Root filesystem for host metrics
+        - /var/run:/var/run:ro  # Access to Docker runtime data
+        - /sys:/sys:ro  # System information
+        - /var/lib/docker/:/var/lib/docker:ro  # Docker metadata
+        - /dev/disk/:/dev/disk:ro  # Disk information
+    devices:
+        - /dev/kmsg  # Access to kernel messages
+    restart: unless-stopped
+  
+  node_exporter:
+    # node exporter
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    ports:
+        - "9100:9100"
+    restart: unless-stopped
+    volumes:
+        - '/:/host:ro,rslave'
+    command:
+        - '--path.rootfs=/host'
+  
+  locust-master:
+    build:
+      context: ./locust/  # Assuming Dockerfile is in the same directory
+    container_name: locust-master
+    command: >
+      -f /mnt/locustfile.py --master --host=http://your-app-url
+    ports:
+      - "8089:8089"  # Locust Web UI
+    volumes:
+      - ./locust/scenarios:/mnt
+    environment:
+      - LOCUST_MODE=master
+
+  locust-worker:
+    build:
+      context: ./locust/
+    depends_on:
+      - locust-master
+    command: >
+      -f /mnt/locustfile.py --worker --master-host=locust-master
+    volumes:
+      - ./locust/scenarios:/mnt
+    environment:
+      - LOCUST_MODE=worker
+    deploy:
+      replicas: 4  # Adjust this number for more workers
+
+  backend:
+    container_name: meteo-backend
+    build:
+      context: ./
+    ports:
+      - "3000:3000"
+    environment:
+      KAFKA_IP: ${KAFKA_IP}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      MONGO_INITDB_DATABASE_USER: ${MONGO_INITDB_DATABASE_USER}
+      MONGO_INITDB_DATABASE_PASSWORD: ${MONGO_INITDB_DATABASE_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+      MONGODB_PRIVATE_IP: ${MONGODB_PRIVATE_IP}
